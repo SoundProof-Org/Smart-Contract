@@ -16,13 +16,6 @@ interface IERC721 is IERC165 {
         uint tokenId
     ) external;
 
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint tokenId,
-        bytes calldata data
-    ) external;
-
     function transferFrom(
         address from,
         address to,
@@ -126,8 +119,9 @@ contract ERC721Minimal is IERC721 {
     ) public override {
         require(from == _ownerOf[id], "from != owner");
         require(to != address(0), "transfer to zero address");
-
         require(_isApprovedOrOwner(from, msg.sender, id), "not authorized");
+
+        _beforeTokenTransfer(from, to, id);
 
         _balanceOf[from]--;
         _balanceOf[to]++;
@@ -142,7 +136,7 @@ contract ERC721Minimal is IERC721 {
         address from,
         address to,
         uint id
-    ) external override {
+    ) public virtual override {
         transferFrom(from, to, id);
 
         require(
@@ -153,25 +147,11 @@ contract ERC721Minimal is IERC721 {
         );
     }
 
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint id,
-        bytes calldata data
-    ) external override {
-        transferFrom(from, to, id);
-
-        require(
-            to.code.length == 0 ||
-                IERC721Receiver(to).onERC721Received(msg.sender, from, id, data) ==
-                IERC721Receiver.onERC721Received.selector,
-            "unsafe recipient"
-        );
-    }
-
     function _mint(address to, uint id) internal {
         require(to != address(0), "mint to zero address");
         require(_ownerOf[id] == address(0), "already minted");
+
+        // _beforeTokenTransfer(address(0), to, id);
 
         _balanceOf[to]++;
         _ownerOf[id] = to;
@@ -190,4 +170,10 @@ contract ERC721Minimal is IERC721 {
 
         emit Transfer(owner, address(0), id);
     }
+
+    function _beforeTokenTransfer(
+        address from,
+        address to,
+        uint256 tokenId
+    ) internal virtual {}
 }

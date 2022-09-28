@@ -9,6 +9,7 @@ import "./SoundProofNFT.sol";
  * SoundProof Factory Contract
  */
 contract SoundProofFactory is Ownable, ISoundProofFactory {
+    /** ========================== SoundProofFactory Get Founctions ========================== */
     /**
      * @dev return length of all NFT list
      */
@@ -42,6 +43,7 @@ contract SoundProofFactory is Ownable, ISoundProofFactory {
         }
     }
 
+    /** ========================== SoundProofFactory Internal Founctions ========================== */
     /**
      * @dev Create SoundProof NFT Internal Function
      */
@@ -71,15 +73,27 @@ contract SoundProofFactory is Ownable, ISoundProofFactory {
         emit SoundProofNFTCreated(ownerAddress, newNFTAddress, allNFTStorageList.length);
     }
 
-    /** ========================== User Founctions ========================== */
-
+    /**
+     * @dev Change Approve Status, Internal Function
+     */
+    function _changeSoundProofNFTApprove(
+        address nftAddress,
+        bool isApprove
+    ) internal {
+        // Change Approve on SoundProof Factory
+        isApproveBySoundProof[nftAddress] = isApprove;
+        // Change Approve on SoundProof NFT
+        ISoundProofNFT(nftAddress).changeApprove(isApprove);
+    }
+    
+    /** ========================== SoundProofFactory User Founctions ========================== */
     /**
      * @dev Create New SoundProof NFT By User
      */
     function createSoundProofNFT(
         string memory _name,
         string memory _symbol
-    ) external payable {
+    ) external override payable {
         // To-Do: Check the Price of new NFT creation
 
         // Get Owner Address
@@ -94,7 +108,7 @@ contract SoundProofFactory is Ownable, ISoundProofFactory {
     function transferSoundProofNFTOwnership(
         address nftAddress,
         address newOwnerAddress
-    ) external {
+    ) external override {
         require(nftOwner[nftAddress] == _msgSender(), "SoundProofFactory: FORBIDDEN");
 
         // Change Owner on SoundProof Factory
@@ -103,16 +117,15 @@ contract SoundProofFactory is Ownable, ISoundProofFactory {
         ISoundProofNFT(nftAddress).changeOwnership(newOwnerAddress);
     }
 
-    /** ========================== Admin Founctions ========================== */
-
+    /** ========================== SoundProofFactory Admin Founctions ========================== */
     /**
      * @dev Create New NFT By SoundProof
      */
-    function createSoundProofNFTByOwner (
+    function createSoundProofNFTByAdmin (
         address userAddress,
         string memory _name,
         string memory _symbol
-    ) external onlyOwner {
+    ) external override onlyOwner {
         // Create New SoundProof NFT
         _createSoundProofNFT(userAddress, _name, _symbol);
     }
@@ -123,12 +136,26 @@ contract SoundProofFactory is Ownable, ISoundProofFactory {
     function changeSoundProofNFTApprove(
         address nftAddress,
         bool isApprove
-    ) external onlyOwner {
+    ) external override onlyOwner {
         require(nftOwner[nftAddress] != address(0), "SoundProofFactory: NFT not exist");
 
-        // Change Approve on SoundProof Factory
-        isApproveBySoundProof[nftAddress] = isApprove;
-        // Change Approve on SoundProof NFT
-        ISoundProofNFT(nftAddress).changeApprove(isApprove);
+        // Call Change Approve Internal Function
+        _changeSoundProofNFTApprove(nftAddress, isApprove);
+    }
+
+    /**
+     * @dev Bulk Change Approve By SoundProof
+     */
+    function changeBulkSoundProofNFTApprove(
+        address[] memory nftAddressList,
+        bool isApprove
+    ) external override onlyOwner {
+        for (uint256 i = 0; i < nftAddressList.length; i += 1) {
+            // If NFT Exists
+            if (nftOwner[nftAddressList[i]] != address(0)) {
+                // Call Change Approve Internal Function
+                _changeSoundProofNFTApprove(nftAddressList[i], isApprove);
+            }
+        }
     }
 }
