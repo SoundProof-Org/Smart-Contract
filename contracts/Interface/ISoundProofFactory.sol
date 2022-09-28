@@ -18,6 +18,8 @@ contract SoundProofFactoryStorage {
     mapping (address => bool) public isApproveBySoundProof;
 }
 
-abstract contract ISoundProofFactory is SoundProofFactoryStorage {
+abstract contract ISoundProofFactory is SoundProofFactoryEvents, SoundProofFactoryStorage {
     function allStorageListLength() public view virtual returns (uint256 length);
+    function allUserNFTCount(address userAddress) public view virtual returns (uint256 userCount);
+    function allNFTList(address userAddress) public view virtual returns (address[] memory nftList);
 }

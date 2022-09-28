@@ -149,7 +149,7 @@ abstract contract ERC721 is Context, ERC165, IERC721 {
         address to,
         uint256 tokenId,
         bytes memory _data
-    ) public override {
+    ) public {
         address from = _msgSender();
         require(_isApprovedOrOwner(from, tokenId), "ERC721: transfer caller is not owner nor approved");
 
