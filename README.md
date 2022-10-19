@@ -33,11 +33,13 @@ This is NFT contract based on ERC-721, representing the IPR directly. <br>
 
 ## SoundProof Contract's Major Feature Architecture
 ### 1. SoundProof NFT Collection Creation
+![0_SoundProofNFT_Creation_Approve drawio](https://user-images.githubusercontent.com/56916797/196719570-f92e883a-460c-4dd6-a614-d9d5d7e78bc5.png)
 ### 2. Transfer SoundProof NFT Collection Ownership
+![1_SoundProofNFT_Transfer_Ownership drawio](https://user-images.githubusercontent.com/56916797/196719595-b00e3bb6-452c-42ba-abd6-fddc2e5b15b1.png)
 ### 3. Duplicate SoundProof NFT Collection
+![2_SoundProofNFT_Duplicate_NFT drawio](https://user-images.githubusercontent.com/56916797/196719634-8ee73366-9aea-452e-987a-f757ecdf70bd.png)
 ### 4. SoundProof NFT mint on Collection
-
-<br>
+![3_SoundProofNFT_Mint_Collection drawio](https://user-images.githubusercontent.com/56916797/196719677-3a776da6-7f07-4bbf-932c-4c7d156a75c3.png)
 
 ## How to install/build/test/deploy SoundProof Contract
 ### 1. How to install
