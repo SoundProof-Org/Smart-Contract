@@ -1,42 +1,59 @@
-# Advanced Sample Hardhat Project
+# SoundProof Smart Contract Repo
 
-This project demonstrates an advanced Hardhat use case, integrating other tools commonly used alongside Hardhat in the ecosystem.
+This is smart contract repository of SoundProof.
+## Overview
+Soundproof aims to solve one key problem: formally documenting ownership in a decentralised market in a transparent yet enforceable way, based on NFTs(Non-Foungible-Token) on blockchain. The key enabler underpinning this vision is a protocol, sitting both on-chain and off-chain.
 
-The project comes with a sample contract, a test for that contract, a sample script that deploys that contract, and an example of a task implementation, which simply lists the available accounts. It also comes with a variety of other tools, preconfigured to work with the project code.
-
-Try running some of the following tasks:
-
-```shell
-npx hardhat accounts
-npx hardhat compile
-npx hardhat clean
-npx hardhat test
-npx hardhat node
-npx hardhat help
-REPORT_GAS=true npx hardhat test
-npx hardhat coverage
-npx hardhat run scripts/deploy.js
-node scripts/deploy.js
-npx eslint '**/*.js'
-npx eslint '**/*.js' --fix
-npx prettier '**/*.{json,sol,md}' --check
-npx prettier '**/*.{json,sol,md}' --write
-npx solhint 'contracts/**/*.sol'
-npx solhint 'contracts/**/*.sol' --fix
+## SoundProof SmartContracts
+### 1. SoundProof Factory-Proxcy Contract
+This is proxy of SoundProof Factory Contract so that we could update SoundProofFactory when version would be upgraded. <br>
+`- Major Featrures`
+```
+* Set Implemention - Update Factory contract address on Proxy
+* Transfer Ownership - Transfer Ownership of Proxy contract
+```
+### 2. SoundProof Factory Contract
+This is major contract of SoundProof which deploy new NFT representing the Intellectual Property Rights(IPR), approve by SoundProof Community(Admin), transfer ownership, duplicate the NFT, change approve status of minted NFT(Sub-Right).<br>
+`- Major Featrures`
+```
+* Create SoundProof NFT - Create new collection, representing the Intellectual Property Rights(IPR)
+* Create SoundProof NFT By Admin - Create new collection by admin
+* Transfer Ownership - Transfer ownership of existed collection
+* Duplicate SoundProof NFT Collection - Duplicate the existed collection by original owner
+* Change approve of existed NFT Collection - change approve or not of existed NFT by SoundProof Community(Admin)
+* Change approve of minted NFT(Sub-Right) - The owner of NFT collection could change the approve status of minted NFT. If owner change it by mistake or illegal business agreement, SoundProof Community should change it.
+```
+### 3. SoundProof NFT Contract
+This is NFT contract based on ERC-721, representing the IPR directly. <br>
+`- Major Features`
+```
+* Mint NFT - Mint new nft on collection, representing the Sub-Right of NFT collection
+* Change approve of minted NFT - If Sub-Right owner(User) do the action against the business agreement, the owner of NFT collection could change the approve status so that could represent the illegal minted NFT and not transfer too.
 ```
 
-# Etherscan verification
+## SoundProof Contract's Major Feature Architecture
+### 1. SoundProof NFT Collection Creation
+### 2. Transfer SoundProof NFT Collection Ownership
+### 3. Duplicate SoundProof NFT Collection
+### 4. SoundProof NFT mint on Collection
 
-To try out Etherscan verification, you first need to deploy a contract to an Ethereum network that's supported by Etherscan, such as Ropsten.
+<br>
 
-In this project, copy the .env.example file to a file named .env, and then edit it to fill in the details. Enter your Etherscan API key, your Ropsten node URL (eg from Alchemy), and the private key of the account which will send the deployment transaction. With a valid .env file in place, first deploy your contract:
-
-```shell
-hardhat run --network ropsten scripts/deploy.js
+## How to install/build/test/deploy SoundProof Contract
+### 1. How to install
 ```
-
-Then, copy the deployment address and paste it in to replace `DEPLOYED_CONTRACT_ADDRESS` in this command:
-
-```shell
-npx hardhat verify --network ropsten DEPLOYED_CONTRACT_ADDRESS "Hello, Hardhat!"
+npm install
+```
+### 2. How to build
+```
+npm run build
+```
+### 3. How to test
+```
+npm run test
+```
+### 4. How to deploy
+```
+npx hardhat run --network ${network} scripts/deploy.js
+npx hardhat verify --network ${network} ${ContractAddress} ${parameters}
 ```
