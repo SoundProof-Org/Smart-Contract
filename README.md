@@ -33,13 +33,13 @@ This is NFT contract based on ERC-721, representing the IPR directly. <br>
 
 ## Soundproof Contract's Major Feature Architecture
 ### 1. Soundproof NFT Collection Creation
-![0_SoundproofNFT_Creation_Approve drawio](https://user-images.githubusercontent.com/56916797/196719570-f92e883a-460c-4dd6-a614-d9d5d7e78bc5.png)
+![0_SoundProofNFT_Creation_Approve drawio](https://user-images.githubusercontent.com/56916797/196791514-1707d58e-7093-4720-a65d-f0637421decc.png)
 ### 2. Transfer Soundproof NFT Collection Ownership
-![1_SoundproofNFT_Transfer_Ownership drawio](https://user-images.githubusercontent.com/56916797/196719595-b00e3bb6-452c-42ba-abd6-fddc2e5b15b1.png)
+![1_SoundProofNFT_Transfer_Ownership drawio](https://user-images.githubusercontent.com/56916797/196791540-21a3b03a-423e-4ddc-9081-7edc6e3af4c8.png)
 ### 3. Duplicate Soundproof NFT Collection
-![2_SoundproofNFT_Duplicate_NFT drawio](https://user-images.githubusercontent.com/56916797/196719634-8ee73366-9aea-452e-987a-f757ecdf70bd.png)
+![2_SoundProofNFT_Duplicate_NFT drawio](https://user-images.githubusercontent.com/56916797/196791565-eb42f351-ecd1-4cfd-9311-0df48bcd412c.png)
 ### 4. Soundproof NFT mint on Collection
-![3_SoundproofNFT_Mint_Collection drawio](https://user-images.githubusercontent.com/56916797/196719677-3a776da6-7f07-4bbf-932c-4c7d156a75c3.png)
+![3_SoundProofNFT_Mint_Collection drawio](https://user-images.githubusercontent.com/56916797/196791617-35dca88b-7095-4e59-94b9-9bd095cea377.png)
 
 ## How to install/build/test/deploy Soundproof Contract
 ### 1. How to install
