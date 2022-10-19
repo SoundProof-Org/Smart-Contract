@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.4;
 import "./BaseContracts/Ownable.sol";
+import "./BaseContracts/ReentrancyGuard.sol";
 import "./Interface/ISoundProofFactory.sol";
 import "./Interface/ISoundProofNFT.sol";
 import "./SoundProofNFT.sol";
@@ -8,7 +9,7 @@ import "./SoundProofNFT.sol";
 /**
  * SoundProof Factory Contract
  */
-contract SoundProofFactory is Ownable, ISoundProofFactory {
+contract SoundProofFactory is Ownable, ISoundProofFactory, ReentrancyGuard {
     /** ========================== SoundProofFactory Get Founctions ========================== */
     /**
      * @dev return length of all NFT list
@@ -50,7 +51,9 @@ contract SoundProofFactory is Ownable, ISoundProofFactory {
     function _createSoundProofNFT(
         address ownerAddress,
         string memory _name,
-        string memory _symbol
+        string memory _symbol,
+        string memory _description,
+        bool _isDuplicate
     ) internal returns (address newNFTAddress) {
         // Get Byte Code
         bytes memory byteCode = type(SoundProofNFT).creationCode;
@@ -62,7 +65,7 @@ contract SoundProofFactory is Ownable, ISoundProofFactory {
         }
 
         require(newNFTAddress != address(0), "SoundProofFactory: Failed on Deploy New NFT");
-        ISoundProofNFT(newNFTAddress).initialize(ownerAddress, _name, _symbol);
+        ISoundProofNFT(newNFTAddress).initialize(ownerAddress, _name, _symbol, _description, _isDuplicate);
 
         // Update Storage List
         nftOwner[newNFTAddress] = ownerAddress;
@@ -93,13 +96,32 @@ contract SoundProofFactory is Ownable, ISoundProofFactory {
     function createSoundProofNFT(
         string memory _name,
         string memory _symbol
-    ) external override payable {
+    ) external override payable nonReentrant {
         // To-Do: Check the Price of new NFT creation
 
         // Get Owner Address
         address ownerAddress = _msgSender();
         // Create New SoundProof NFT
-        _createSoundProofNFT(ownerAddress, _name, _symbol);
+        _createSoundProofNFT(ownerAddress, _name, _symbol, "This NFT is generated and protected by SoundProofIP Community.", false);
+    }
+
+    /**
+     * @dev Duplicate Existed SoundProofNFT
+     */
+    function duplicateSoundProofNFT(
+        address duplicateAddress,
+        address existedSoundProofNFT
+    ) external override payable nonReentrant {
+        require(nftOwner[existedSoundProofNFT] == _msgSender(), "SoundProofFactory: FORBIDDEN");
+        // To-Do: Check the Price of duplicate NFT creation
+
+        // Get Name of Original NFT
+        string memory name = ISoundProofNFT(existedSoundProofNFT).name();
+        // Get Symbol of Original NFT
+        string memory symbol = ISoundProofNFT(existedSoundProofNFT).symbol();
+
+        // Create New NFT as duplicate
+        _createSoundProofNFT(duplicateAddress, name, symbol, "This NFT is duplicated by SoundProofIP Community.", true);
     }
 
     /**
@@ -127,7 +149,7 @@ contract SoundProofFactory is Ownable, ISoundProofFactory {
         string memory _symbol
     ) external override onlyOwner {
         // Create New SoundProof NFT
-        _createSoundProofNFT(userAddress, _name, _symbol);
+        _createSoundProofNFT(userAddress, _name, _symbol, "This NFT is generated and protected by SoundProofIP Community.", false);
     }
 
     /**
@@ -135,7 +157,7 @@ contract SoundProofFactory is Ownable, ISoundProofFactory {
      */
     function changeSoundProofNFTApprove(
         address nftAddress,
-        bool isApprove
+        bool isApprove 
     ) external override onlyOwner {
         require(nftOwner[nftAddress] != address(0), "SoundProofFactory: NFT not exist");
 
@@ -157,5 +179,19 @@ contract SoundProofFactory is Ownable, ISoundProofFactory {
                 _changeSoundProofNFTApprove(nftAddressList[i], isApprove);
             }
         }
+    }
+
+    /**
+     * @dev Change Approve Status of Minted NFT By SoundProof
+     */
+    function changeSoundProofMintedNFTApprove(
+        address nftAddress,
+        uint256 mintedId,
+        bool isApprove
+    ) external override onlyOwner {
+        require(nftOwner[nftAddress] != address(0), "SoundProofFactory: NFT not exist");
+        require(mintedId < ISoundProofNFT(nftAddress).tokenIdTracker(), "SoundProofFactory: Minted NFT does not exist");
+
+        ISoundProofNFT(nftAddress).changeApproveOfMintedNFT(mintedId, isApprove);
     }
 }

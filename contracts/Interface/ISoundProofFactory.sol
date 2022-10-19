@@ -26,10 +26,19 @@ abstract contract ISoundProofFactory is SoundProofFactoryEvents, SoundProofFacto
 
     /// User Functions
     function createSoundProofNFT(string memory _name, string memory _symbol) external virtual payable;
+    function duplicateSoundProofNFT(address duplicateAddress, address existedSoundProofNFTAddress) external virtual payable;
     function transferSoundProofNFTOwnership(address nftAddress, address newOwnerAddress) external virtual;
 
     /// Admin Functions
     function createSoundProofNFTByAdmin(address userAddress, string memory _name, string memory _symbol) external virtual;
     function changeSoundProofNFTApprove(address nftAddress, bool isApprove) external virtual;
-    function changeBulkSoundProofNFTApprove(address[] memory nftAddressList, bool isApprove) external virtual;
+    function changeBulkSoundProofNFTApprove(
+        address[] memory nftAddressList,
+        bool isApprove
+    ) external virtual;
+    function changeSoundProofMintedNFTApprove(
+        address nftAddress,
+        uint256 mintedId,
+        bool isApprove
+    ) external virtual;
 }

@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.4;
-import "./BaseContracts/ERC721Minimal.sol";
+import "./BaseContracts/ERC721MinimalUpdate.sol";
 import "./Interface/ISoundProofNFT.sol";
 import "./BaseContracts/Strings.sol";
 
 /**
  * SoundProof NFT Contract, The license of NFT is protected by SoundProof Community.
  */
-contract SoundProofNFT is ISoundProofNFT, ERC721Minimal {
+contract SoundProofNFT is ISoundProofNFT, ERC721MinimalUpdate {
     using Strings for uint256;
 
     modifier onlySoundProofFactory {
@@ -47,19 +47,27 @@ contract SoundProofNFT is ISoundProofNFT, ERC721Minimal {
     /**
      * @dev Initialize SoundProofNFT Contract
      */
-    function initialize(address _nftOwner, string memory _name, string memory _symbol) external override onlySoundProofFactory {
+    function initialize(
+        address _nftOwner,
+        string memory _name,
+        string memory _symbol,
+        string memory _description,
+        bool _isDuplicate
+    ) external override onlySoundProofFactory {
         nftOwner = _nftOwner;
         isApprove = false;
         name = _name;
         symbol = _symbol;
+        description = _description;
+        isDuplicate = _isDuplicate;
     }
 
-    /**
+    /** 
      * @dev Change Approve
-     */
+     */ 
     function changeApprove(bool _isApprove) external override onlySoundProofFactory {
         // Change Approve
-        isApprove = _isApprove;
+        isApprove = _isApprove; 
     }
 
     /**
@@ -68,13 +76,13 @@ contract SoundProofNFT is ISoundProofNFT, ERC721Minimal {
     function changeOwnership(address newOwner) external override onlySoundProofFactory {
         // Change Ownership
         nftOwner = newOwner;
-    }
+    }   
 
     /** ========================== SoundProofNFT Founctions ========================== */
     /**
      * @dev Mint NFT - Make Sub IP of NFT
      */
-    function soundProofNFTMint(address mintAddress, string memory metadata) external onlySoundProofNFTOwner {
+    function soundProofNFTMint(address mintAddress, string memory metadata) external override onlySoundProofNFTOwner {
         // Check Approve from SoundProofFactory
         require(isApprove, "SoundProofNFT: FORBIDDEN, Not Approved Yet");
 
@@ -95,7 +103,7 @@ contract SoundProofNFT is ISoundProofNFT, ERC721Minimal {
     /**
      * @dev Change Approve Status of Minted NFT
      */
-    function changeApproveOfMintedNFT(uint256 tokenId, bool isApprove) external {
+    function changeApproveOfMintedNFT(uint256 tokenId, bool isApprove) external override {
         require(msg.sender == nftOwner || msg.sender == soundProofFactory, "SoundProofNFT: FORBIDDEN");
 
         soundProofNFTApproveId[tokenId] = isApprove;
@@ -104,7 +112,7 @@ contract SoundProofNFT is ISoundProofNFT, ERC721Minimal {
     /**
      * @dev Set Base URI
      */
-    function setBaseURI(string memory baseURI) external onlySoundProofNFTOwner {
+    function setBaseURI(string memory baseURI) external override onlySoundProofNFTOwner {
         baseTokenURI = baseURI;
     }
 }

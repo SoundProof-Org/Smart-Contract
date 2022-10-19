@@ -101,6 +101,57 @@ contract("SoundProof Factory Contract", () => {
       assert.equal(await soundProofNFT.nftOwner(), this.alice.address);
       // Check Initialize Approve
       assert.equal(await soundProofNFT.isApprove(), false);
+      // Check Description
+      assert.equal(
+        await soundProofNFT.description(),
+        "This NFT is generated and protected by SoundProofIP Community."
+      );
+      // Check Duplicate
+      assert.equal(await soundProofNFT.isDuplicate(), false);
+    });
+
+    it("Check Duplicate of SoundProof NFT", async () => {
+      // Duplicate Alice's NFT from non-Owner
+      await expect(
+        this.updatedProxy
+          .connect(this.owner)
+          .duplicateSoundProofNFT(this.bob.address, aliceNFTAddress)
+      ).to.be.revertedWith("SoundProofFactory: FORBIDDEN");
+
+      // Duplicate Alice's NFT to Bob
+      await this.updatedProxy
+        .connect(this.alice)
+        .duplicateSoundProofNFT(this.bob.address, aliceNFTAddress);
+
+      // Get Bob's NFT Address
+      const bobNFTAddress = (
+        await this.updatedProxy.allNFTList(this.bob.address)
+      )[0];
+
+      // Get Bob's NFT
+      const bobNFT = new ethers.Contract(
+        bobNFTAddress,
+        this.SoundProofNFTInstance.abi,
+        this.alice
+      );
+
+      // Check on BobNFT
+      // Check SoundProofFactory Address
+      assert.equal(
+        await bobNFT.soundProofFactory(),
+        this.SoundProofFactoryProxy.address
+      );
+      // Check NFT Owner Address
+      assert.equal(await bobNFT.nftOwner(), this.bob.address);
+      // Check Initialize Approve
+      assert.equal(await bobNFT.isApprove(), false);
+      // Check Description
+      assert.equal(
+        await bobNFT.description(),
+        "This NFT is duplicated by SoundProofIP Community."
+      );
+      // Check Duplicate
+      assert.equal(await bobNFT.isDuplicate(), true);
     });
 
     it("Check to Change Approve of SoundProof NFT", async () => {
@@ -156,6 +207,45 @@ contract("SoundProof Factory Contract", () => {
 
       // Check New Owner on SoundProofNFT
       assert.equal(await soundProofNFT.nftOwner(), this.bob.address);
+    });
+
+    it("Check To Approve Minted NFT of SoundProof NFT", async () => {
+      // Approve Alice's NFT
+      await this.updatedProxy
+        .connect(this.owner)
+        .changeSoundProofNFTApprove(aliceNFTAddress, true);
+
+      // Mint to Bob's
+      await soundProofNFT
+        .connect(this.alice)
+        .soundProofNFTMint(this.bob.address, "This nft created by Alice.", {
+          gasLimit: 2000000,
+        });
+
+      // Check Approve Status
+      assert.equal(await soundProofNFT.soundProofNFTApproveId(0), true);
+
+      // Check Approve with non-existed NFT
+      await expect(
+        this.updatedProxy
+          .connect(this.owner)
+          .changeSoundProofMintedNFTApprove(this.owner.address, 0, false)
+      ).to.be.revertedWith("SoundProofFactory: NFT not exist");
+
+      // Check Approve with non-existed Minted NFT
+      await expect(
+        this.updatedProxy
+          .connect(this.owner)
+          .changeSoundProofMintedNFTApprove(aliceNFTAddress, 10, false)
+      ).to.be.revertedWith("SoundProofFactory: Minted NFT does not exist");
+
+      // Change Approve Status
+      await this.updatedProxy
+        .connect(this.owner)
+        .changeSoundProofMintedNFTApprove(aliceNFTAddress, 0, false);
+
+      // Check Approve Status
+      assert.equal(await soundProofNFT.soundProofNFTApproveId(0), false);
     });
   });
 });

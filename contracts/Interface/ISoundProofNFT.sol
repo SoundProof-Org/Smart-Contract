@@ -12,6 +12,9 @@ contract SoundProofNFTStorage {
     /// @notice Token symbol
     string public symbol;
 
+    /// @notice Description
+    string public description;
+
     /// @notice SoundProofFactory
     address public soundProofFactory;
 
@@ -20,6 +23,9 @@ contract SoundProofNFTStorage {
 
     /// @notice Approve By SoundProof
     bool public isApprove;
+
+    /// @notice isDuplicate or Not
+    bool public isDuplicate;
 
     /// @notice Base Token URI
     string public baseTokenURI;
@@ -35,7 +41,16 @@ contract SoundProofNFTStorage {
 }
 
 abstract contract ISoundProofNFT is SoundProofNFTStorage, SoundProofNFTEvents {
-    function initialize(address _nftOwner, string memory _name, string memory _symbol) external virtual;
+    function initialize(
+        address _nftOwner,
+        string memory _name,
+        string memory _symbol,
+        string memory _description,
+        bool _isDuplicate
+    ) external virtual;
     function changeApprove(bool _isApprove) external virtual;
     function changeOwnership(address newOwner) external virtual;
+    function soundProofNFTMint(address mintAddress, string memory metadata) external virtual;
+    function changeApproveOfMintedNFT(uint256 tokenId, bool isApprove) external virtual;
+    function setBaseURI(string memory baseURI) external virtual;
 }
