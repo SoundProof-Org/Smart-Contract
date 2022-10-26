@@ -3,6 +3,7 @@
 This is smart contract repository of Soundproof.
 ## Overview
 Soundproof aims to solve one key problem: formally documenting ownership in a decentralised market in a transparent yet enforceable way, based on NFTs(Non-Foungible-Token) on blockchain. The key enabler underpinning this vision is a protocol, sitting both on-chain and off-chain.
+![4_SoundProofNFT_Flow_Component drawio](https://user-images.githubusercontent.com/56916797/198028693-1893a199-3781-4524-91a2-56de997fa43c.png)
 
 ## Soundproof SmartContracts
 ### 1. Soundproof Factory-Proxy Contract
