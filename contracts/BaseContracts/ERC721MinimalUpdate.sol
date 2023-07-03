@@ -10,6 +10,11 @@ interface IERC721 is IERC165 {
 
     function ownerOf(uint tokenId) external view returns (address owner);
 
+    function safeTransfer(
+        address to,
+        uint tokenId
+    ) external;
+
     function safeTransferFrom(
         address from,
         address to,
@@ -162,11 +167,7 @@ contract ERC721MinimalUpdate is IERC721 {
     ) public override {
         require(_isApprovedOrOwner(from, msg.sender, id), "not authorized");
 
-        _beforeTokenTransfer(from, to, id);
-
         _transfer(from, to, id);
-
-        emit Transfer(from, to, id);
     }
 
     function safeTransferFrom(
@@ -182,6 +183,12 @@ contract ERC721MinimalUpdate is IERC721 {
                 IERC721Receiver.onERC721Received.selector,
             "unsafe recipient"
         );
+    }
+
+    function safeTransfer(address to, uint id) public virtual override {
+        address from = msg.sender;
+
+        safeTransferFrom(from, to, id);
     }
 
     function _mint(address to, uint id) internal {

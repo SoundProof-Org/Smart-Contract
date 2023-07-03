@@ -1,8 +1,12 @@
 const { assert, expect } = require("chai");
 const { ethers, contract, artifacts } = require("hardhat");
+const { ownerList } = require("./constants.js");
+const { generateRandomHash, buildData } = require("./utils.js");
 
 const SoundProofFactory = artifacts.require("SoundProofFactory");
 const SoundProofFactoryProxy = artifacts.require("SoundProofFactoryProxy");
+const SoundProofUtils = artifacts.require("SoundProofUtils");
+const SoundProofUtilsProxy = artifacts.require("SoundProofUtilsProxy");
 const SoundProofNFT = artifacts.require("SoundProofNFT");
 
 contract("SoundProof NFT Contract", () => {
@@ -30,9 +34,28 @@ contract("SoundProof NFT Contract", () => {
     this.SoundProofFactoryProxy = await soundProofFactoryProxy.deploy();
     await this.SoundProofFactoryProxy.deployed();
 
-    // Set Implementation
+    // Set Factory Implementation
     await this.SoundProofFactoryProxy.connect(this.owner).setImplementation(
       this.SoundProofFactory.address
+    );
+
+    // SoundProofUtils Contract
+    this.SoundProofUtilsInstance = await SoundProofUtils.new();
+    const soundProofUtils = await ethers.getContractFactory("SoundProofUtils");
+    this.SoundProofUtils = await soundProofUtils.deploy();
+    await this.SoundProofUtils.deployed();
+
+    // SoundProofUtils Proxy Contract
+    this.SoundProofUtilsProxyInstance = await SoundProofUtilsProxy.new();
+    const soundProofUtilsProxy = await ethers.getContractFactory(
+      "SoundProofUtilsProxy"
+    );
+    this.SoundProofUtilsProxy = await soundProofUtilsProxy.deploy();
+    await this.SoundProofUtilsProxy.deployed();
+
+    // Set Utils Implementation
+    await this.SoundProofUtilsProxy.connect(this.owner).setImplementation(
+      this.SoundProofUtils.address
     );
 
     // SoundProofNFT Contract
@@ -40,7 +63,7 @@ contract("SoundProof NFT Contract", () => {
   });
 
   describe("Test - SoundProof NFT", async () => {
-    let aliceNFTAddress, soundProofNFT;
+    let aliceNFTAddress, soundProofNFT, nftUniqueID;
     const sampleBaseURI = "https://metadata.soundproof.io/123456789/";
 
     beforeEach(async () => {
@@ -51,12 +74,20 @@ contract("SoundProof NFT Contract", () => {
         this.owner
       );
 
+      // Update SoundProof Utils to Factory
+      await this.updatedProxy
+        .connect(this.owner)
+        .updateSoundProofUtils(this.SoundProofUtilsProxy.address, {
+          from: this.owner.address,
+        });
+
+      nftUniqueID = await generateRandomHash();
       // Create New SoundProof NFT
       await this.updatedProxy
         .connect(this.alice)
-        .createSoundProofNFT("SoundProof Example NFT", "SPEN", {
+        .createSoundProofNFT(nftUniqueID, ownerList[0], {
           from: this.alice.address,
-          gasLimit: 2000000,
+          gasLimit: 20000000,
         });
 
       // Get Alice's NFT Address
@@ -76,44 +107,67 @@ contract("SoundProof NFT Contract", () => {
     });
 
     it("Check Initial Values", async () => {
+      // Check SoundProof Factory
+      assert.equal(
+        await soundProofNFT.soundProofFactory(),
+        this.SoundProofFactoryProxy.address
+      );
       // Check Name
-      assert.equal(await soundProofNFT.name(), "SoundProof Example NFT");
+      assert.equal(await soundProofNFT.name(), "SoundProofIP NFT");
       // Check Symbol
-      assert.equal(await soundProofNFT.symbol(), "SPEN");
+      assert.equal(await soundProofNFT.symbol(), "SP-NFT");
+      // Check Description
+      assert.equal(
+        await soundProofNFT.description(),
+        "This NFT is generated and protected by SoundProofIP Community."
+      );
+      // Check UniqueID
+      assert.equal(await soundProofNFT.uniqueId(), nftUniqueID);
       // Check Owner
       assert.equal(await soundProofNFT.nftOwner(), this.alice.address);
       // Check Approve Status
-      assert.equal(await soundProofNFT.isApprove(), false);
+      assert.equal(
+        (await this.updatedProxy.soundProofNFTInfo(aliceNFTAddress)).isApprove,
+        false
+      );
+      // Check Duplicate
+      assert.equal(await soundProofNFT.isDuplicate(), false);
       // Check Base URI
       assert.equal(await soundProofNFT.baseTokenURI(), sampleBaseURI);
     });
 
-    it("Check Mint NFT - Make Sub NFT", async () => {
+    it("Check Mint NFT With WhiteList - Make Sub IP", async () => {
       // Call to mint from non-Owner of SoundProof NFT
       await expect(
-        soundProofNFT
-          .connect(this.bob)
-          .soundProofNFTMint(this.bob.address, "This nft created by Bob.")
-      ).to.be.revertedWith(
-        "SoundProofNFT: FORBIDDEN, only NFT owner could do it"
-      );
+        soundProofNFT.connect(this.bob).soundProofNFTMint(this.bob.address)
+      ).to.be.revertedWith("Neither SoundProof Factory or NFT Owner");
 
       // Call to mint from Owner, but not approved by SoundProofFactory Yet
       await expect(
-        soundProofNFT
-          .connect(this.alice)
-          .soundProofNFTMint(this.bob.address, "This nft created by Alice.")
-      ).to.be.revertedWith("SoundProofNFT: FORBIDDEN, Not Approved Yet");
+        soundProofNFT.connect(this.alice).soundProofNFTMint(this.bob.address)
+      ).to.be.revertedWith(
+        "SoundProofNFT: FORBIDDEN, Not Approved Yet By Service."
+      );
 
       // Approve Alice's NFT
       await this.updatedProxy
         .connect(this.owner)
         .changeSoundProofNFTApprove(aliceNFTAddress, true);
 
+      // Call to mint from Owner, but not approved by SoundProofFactory Yet
+      await expect(
+        soundProofNFT.connect(this.alice).soundProofNFTMint(this.bob.address)
+      ).to.be.revertedWith("SoundProofNFT: To address is not in WhiteList.");
+
+      // Update Bob's Address in Whitelist
+      await this.updatedProxy
+        .connect(this.owner)
+        .updateWhiteList(this.bob.address, true);
+
       // Mint to Bob's
       await soundProofNFT
         .connect(this.alice)
-        .soundProofNFTMint(this.bob.address, "This nft created by Alice.");
+        .soundProofNFTMint(this.bob.address);
 
       // Check Total Supply
       assert.equal(await soundProofNFT.totalSupply(), 1);
@@ -124,8 +178,51 @@ contract("SoundProof NFT Contract", () => {
       // Check Balance of Owner
       assert.equal(await soundProofNFT.balanceOf(this.bob.address), 1);
 
-      // Check Approve Status
-      assert.equal(await soundProofNFT.soundProofNFTApproveId(0), true);
+      // Check Token URI
+      assert.equal(await soundProofNFT.tokenURI(0), `${sampleBaseURI}0`);
+    });
+
+    it("Check Mint NFT With Non-WhiteList - Make Sub IP", async () => {
+      // Call to mint from non-Owner of SoundProof NFT
+      await expect(
+        soundProofNFT.connect(this.bob).soundProofNFTMint(this.bob.address)
+      ).to.be.revertedWith("Neither SoundProof Factory or NFT Owner");
+
+      // Call to mint from Owner, but not approved by SoundProofFactory Yet
+      await expect(
+        soundProofNFT.connect(this.alice).soundProofNFTMint(this.bob.address)
+      ).to.be.revertedWith(
+        "SoundProofNFT: FORBIDDEN, Not Approved Yet By Service."
+      );
+
+      // Approve Alice's NFT
+      await this.updatedProxy
+        .connect(this.owner)
+        .changeSoundProofNFTApprove(aliceNFTAddress, true);
+
+      // Call to mint from Owner, but not approved by SoundProofFactory Yet
+      await expect(
+        soundProofNFT.connect(this.alice).soundProofNFTMint(this.bob.address)
+      ).to.be.revertedWith("SoundProofNFT: To address is not in WhiteList.");
+
+      // Update Alice's NFT to Public
+      await this.updatedProxy
+        .connect(this.owner)
+        .changeSoundProofNFTStatus(aliceNFTAddress, true);
+
+      // Mint to Bob's
+      await soundProofNFT
+        .connect(this.alice)
+        .soundProofNFTMint(this.bob.address);
+
+      // Check Total Supply
+      assert.equal(await soundProofNFT.totalSupply(), 1);
+
+      // Check NFT Owner
+      assert.equal(await soundProofNFT.ownerOf(0), this.bob.address);
+
+      // Check Balance of Owner
+      assert.equal(await soundProofNFT.balanceOf(this.bob.address), 1);
 
       // Check Token URI
       assert.equal(await soundProofNFT.tokenURI(0), `${sampleBaseURI}0`);
@@ -137,15 +234,60 @@ contract("SoundProof NFT Contract", () => {
         .connect(this.owner)
         .changeSoundProofNFTApprove(aliceNFTAddress, true);
 
+      // Update Bob's Address in Whitelist
+      await this.updatedProxy
+        .connect(this.owner)
+        .updateWhiteList(this.bob.address, true);
+
       // Mint to Bob's
       await soundProofNFT
         .connect(this.alice)
-        .soundProofNFTMint(this.bob.address, "This nft created by Alice.");
+        .soundProofNFTMint(this.bob.address);
+
+      // Try to safeTransfer to non-Whitelist user
+      await expect(
+        soundProofNFT.connect(this.bob).safeTransfer(this.alice.address, 0)
+      ).to.be.revertedWith("SoundProofNFT: To address is not in WhiteList.");
+
+      // Update Alice's Address to WhiteList
+      await this.updatedProxy
+        .connect(this.owner)
+        .updateWhiteList(this.alice.address, true);
+
+      // Transfer Bob to Alice by Owner
+      await soundProofNFT.connect(this.bob).safeTransfer(this.alice.address, 0);
+
+      // Check NFT Owner
+      assert.equal(await soundProofNFT.ownerOf(0), this.alice.address);
+
+      // Check Balance of Previous Owner
+      assert.equal(await soundProofNFT.balanceOf(this.bob.address), 0);
+
+      // Check Balance Of New Owner
+      assert.equal(await soundProofNFT.balanceOf(this.alice.address), 1);
+    });
+
+    it("Check Transfer From NFT", async () => {
+      // Approve Alice's NFT
+      await this.updatedProxy
+        .connect(this.owner)
+        .changeSoundProofNFTApprove(aliceNFTAddress, true);
+
+      // Update Bob's Address in Whitelist
+      await this.updatedProxy
+        .connect(this.owner)
+        .updateWhiteList(this.bob.address, true);
+
+      // Mint to Bob's
+      await soundProofNFT
+        .connect(this.alice)
+        .soundProofNFTMint(this.bob.address);
 
       // Approve the transfer
       await soundProofNFT
         .connect(this.bob)
         .setApprovalForAll(this.owner.address, true);
+
       // Check transfer approve status
       assert.equal(
         await soundProofNFT.isApprovedForAll(
@@ -154,6 +296,18 @@ contract("SoundProof NFT Contract", () => {
         ),
         true
       );
+
+      // Try to safeTransferFrom to non-Whitelist user
+      await expect(
+        soundProofNFT
+          .connect(this.owner)
+          .safeTransferFrom(this.bob.address, this.alice.address, 0)
+      ).to.be.revertedWith("SoundProofNFT: To address is not in WhiteList.");
+
+      // Update Alice's Address to WhiteList
+      await this.updatedProxy
+        .connect(this.owner)
+        .updateWhiteList(this.alice.address, true);
 
       // Transfer Bob to Alice by Owner
       await soundProofNFT
@@ -170,33 +324,127 @@ contract("SoundProof NFT Contract", () => {
       assert.equal(await soundProofNFT.balanceOf(this.alice.address), 1);
     });
 
-    it("Check Approve of Minted NFT", async () => {
+    it("Check Metadata of Minted NFT", async () => {
       // Approve Alice's NFT
       await this.updatedProxy
         .connect(this.owner)
         .changeSoundProofNFTApprove(aliceNFTAddress, true);
 
+      // Update Bob's Address in Whitelist
+      await this.updatedProxy
+        .connect(this.owner)
+        .updateWhiteList(this.bob.address, true);
+
       // Mint to Bob's
       await soundProofNFT
         .connect(this.alice)
-        .soundProofNFTMint(this.bob.address, "This nft created by Alice.");
+        .soundProofNFTMint(this.bob.address);
 
-      // Approve the transfer
-      await soundProofNFT
-        .connect(this.bob)
-        .setApprovalForAll(this.owner.address, true);
+      // Update SoundProof NFT Metadata
+      await soundProofNFT.connect(this.alice).updateSoundProofNFTMetadata(
+        0,
+        this.alice.address, // Author Address
+        "https://metadata.soundproofip.io/1234-5678-90ab", // Metadata ID
+        "this is territory from soundproof", // Territory
+        1234567890, // Valid From
+        5678901234, // Valid To,
+        "This is legal NFT collection created by SoundProofIP" // Right Type)
+      );
 
-      // Not Approve for the Minted NFT
+      // Get NFT Metadata
+      const nftMetadata = await soundProofNFT.soundProofMetadataList(0);
+
+      // Check Author of SoundProofNFT Metadata
+      assert.equal(nftMetadata.author, this.alice.address);
+      // Check MetadataID of SoundProofNFT Metadata
+      assert.equal(
+        nftMetadata.metadataId,
+        "https://metadata.soundproofip.io/1234-5678-90ab"
+      );
+      // Check Territory of SoundProofNFT Metadata
+      assert.equal(nftMetadata.territory, "this is territory from soundproof");
+      // Check ValidFrom of SoundProofNFT Metadata
+      assert.equal(nftMetadata.validFrom, "1234567890");
+      // Check ValidTo of SoundProofNFT Metadata
+      assert.equal(nftMetadata.validTo, "5678901234");
+      // Check RightType of SoundProofNFT Metadata
+      assert.equal(
+        nftMetadata.rightType,
+        "This is legal NFT collection created by SoundProofIP"
+      );
+    });
+
+    it("Check NFT Permit", async () => {
+      // Approve Alice's NFT
+      await this.updatedProxy
+        .connect(this.owner)
+        .changeSoundProofNFTApprove(aliceNFTAddress, true);
+
+      // Update Bob's Address in Whitelist
+      await this.updatedProxy
+        .connect(this.owner)
+        .updateWhiteList(this.bob.address, true);
+
+      // Mint to Bob's
       await soundProofNFT
         .connect(this.alice)
-        .changeApproveOfMintedNFT(0, false);
+        .soundProofNFTMint(this.bob.address);
 
-      // Transfer Bob to Alice by Owner
+      // Get ChainID & Deadline
+      const chainId = (await soundProofNFT.getChainId()).toNumber();
+      const deadline = Date.now() + 3000;
+      // Get Signature Data
+      const signatureData = await buildData(
+        aliceNFTAddress,
+        chainId,
+        this.alice.address,
+        0,
+        (await soundProofNFT.nonces(0)).toNumber(),
+        deadline
+      );
+
+      // Get Signature
+      const signature = await ethers.provider.send("eth_signTypedData_v4", [
+        this.bob.address,
+        JSON.stringify(signatureData, null, 2),
+      ]);
+
+      // Split Signature
+      const r = signature.substring(0, 66);
+      const s = "0x" + signature.substring(66, 130);
+      const v = parseInt(signature.substring(130, 132), 16);
+
+      // Permit
+      await soundProofNFT.permit(this.alice.address, 0, deadline, v, r, s);
+
+      // Check Approve
+      assert.equal(this.alice.address, await soundProofNFT.getApproved(0));
+
+      // Try to safeTransferFrom to non-Whitelist user
       await expect(
         soundProofNFT
-          .connect(this.owner)
-          .safeTransferFrom(this.bob.address, this.alice.address, 0)
-      ).to.be.revertedWith("SoundProofNFT: FORBIDDEN By Owner");
+          .connect(this.alice)
+          .safeTransferFrom(this.bob.address, this.owner.address, 0)
+      ).to.be.revertedWith("SoundProofNFT: To address is not in WhiteList.");
+
+      // Update Alice's Address to WhiteList
+      await this.updatedProxy
+        .connect(this.owner)
+        .updateWhiteList(this.owner.address, true);
+
+      // Transfer Bob to Owner By Alice
+      await soundProofNFT
+        .connect(this.alice)
+        .safeTransferFrom(this.bob.address, this.owner.address, 0);
+
+      // Check NFT Owner
+      assert.equal(await soundProofNFT.ownerOf(0), this.owner.address);
+
+      // Check Balance of Previous Owner
+      assert.equal(await soundProofNFT.balanceOf(this.bob.address), 0);
+
+      // Check Balance Of New Owner
+      assert.equal(await soundProofNFT.balanceOf(this.owner.address), 1);
     });
   });
 });
