@@ -82,7 +82,7 @@ contract ERC721MinimalUpdate is IERC721 {
         
         uint count = 0;
         uint length = _owners.length;
-        for( uint i = 0; i < length; ++i ){
+        for (uint i = 0; i < length; ++i ) {
           if( owner == _owners[i] ){
             count += 1;
           }
@@ -95,7 +95,7 @@ contract ERC721MinimalUpdate is IERC721 {
     function tokenOfOwnerByIndex(address owner) public view returns (uint[] memory tokenIdList) {
         require(owner != address(0), "ERC721: Tokens of Owner for the zero address");
 
-        uint256 ownerBalance = balanceOf(owner);
+        uint ownerBalance = balanceOf(owner);
         uint id = 0;
 
         tokenIdList = new uint[](ownerBalance);

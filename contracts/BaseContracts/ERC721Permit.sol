@@ -17,7 +17,7 @@ contract ERC721Permit is ERC721MinimalUpdate {
     /// @dev Domain Separator
     bytes32 public immutable DOMAIN_SEPARATOR;
 
-    /// @notice Computes the nameHash and versionHash
+    /// @notice Computes the Name Hash and Version Hash
     constructor() {
         PERMIT_TYPEHASH = keccak256("Permit(address spender,uint256 tokenId,uint256 nonce,uint256 deadline)");
         DOMAIN_SEPARATOR = keccak256(

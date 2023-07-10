@@ -1,5 +1,7 @@
+/* eslint-disable no-unused-vars */
 const { assert, expect } = require("chai");
 const { ethers, contract, artifacts } = require("hardhat");
+const { web3 } = require("hardhat");
 const { ownerList } = require("./constants.js");
 const { generateRandomHash, buildData } = require("./utils.js");
 
@@ -134,6 +136,22 @@ contract("SoundProof NFT Contract", () => {
       assert.equal(await soundProofNFT.isDuplicate(), false);
       // Check Base URI
       assert.equal(await soundProofNFT.baseTokenURI(), sampleBaseURI);
+      // Check OwnerList
+      const nftOwnerList = await soundProofNFT.getOwnerList();
+      assert.equal(nftOwnerList.length, ownerList[0].length);
+
+      for (let i = 0; i < ownerList[0].length; i += 1) {
+        // Check Owned Percentage
+        assert.equal(
+          ownerList[0][i].ownedPercentage,
+          nftOwnerList[i].ownedPercentage
+        );
+        // Check Owner Address
+        assert.equal(
+          ownerList[0][i].ownerAddress,
+          nftOwnerList[i].ownerAddress
+        );
+      }
     });
 
     it("Check Mint NFT With WhiteList - Make Sub IP", async () => {
@@ -169,17 +187,32 @@ contract("SoundProof NFT Contract", () => {
         .connect(this.alice)
         .soundProofNFTMint(this.bob.address);
 
+      // Mint Again to Bob's
+      await soundProofNFT
+        .connect(this.alice)
+        .soundProofNFTMint(this.bob.address);
+
       // Check Total Supply
-      assert.equal(await soundProofNFT.totalSupply(), 1);
+      assert.equal(await soundProofNFT.totalSupply(), 2);
 
       // Check NFT Owner
       assert.equal(await soundProofNFT.ownerOf(0), this.bob.address);
+      assert.equal(await soundProofNFT.ownerOf(1), this.bob.address);
 
       // Check Balance of Owner
-      assert.equal(await soundProofNFT.balanceOf(this.bob.address), 1);
+      assert.equal(await soundProofNFT.balanceOf(this.bob.address), 2);
 
       // Check Token URI
       assert.equal(await soundProofNFT.tokenURI(0), `${sampleBaseURI}0`);
+      assert.equal(await soundProofNFT.tokenURI(1), `${sampleBaseURI}1`);
+
+      // Check Token of Owner By Index
+      const tokenIdList = await soundProofNFT.tokenOfOwnerByIndex(
+        this.bob.address
+      );
+      for (let i = 0; i < tokenIdList.length; i += 1) {
+        assert.equal(tokenIdList[i], `${i}`);
+      }
     });
 
     it("Check Mint NFT With Non-WhiteList - Make Sub IP", async () => {
@@ -445,6 +478,77 @@ contract("SoundProof NFT Contract", () => {
 
       // Check Balance Of New Owner
       assert.equal(await soundProofNFT.balanceOf(this.owner.address), 1);
+    });
+
+    it("Check NFT Mint/Transfer/TransferFrom", async () => {
+      // Approve Alice's NFT
+      await this.updatedProxy
+        .connect(this.owner)
+        .changeSoundProofNFTApprove(aliceNFTAddress, true);
+
+      // Update Bob's Address in Whitelist
+      await this.updatedProxy
+        .connect(this.owner)
+        .updateWhiteList(this.bob.address, true);
+
+      // Mint to Bob's
+      const mintTx = await soundProofNFT
+        .connect(this.alice)
+        .soundProofNFTMint(this.bob.address);
+      // console.log(
+      //   "Mint Transaction: ",
+      //   await web3.eth.getTransactionReceipt(mintTx.hash)
+      // );
+
+      // Mint Again to Bob's
+      await soundProofNFT
+        .connect(this.alice)
+        .soundProofNFTMint(this.bob.address);
+
+      // Update Alice's Address to WhiteList
+      await this.updatedProxy
+        .connect(this.owner)
+        .updateWhiteList(this.alice.address, true);
+
+      // Transfer Bob to Alice by Owner
+      const transferTx = await soundProofNFT
+        .connect(this.bob)
+        .safeTransfer(this.alice.address, 0);
+      // console.log(
+      //   "Safe Transfer Transaction: ",
+      //   await web3.eth.getTransactionReceipt(transferTx.hash)
+      // );
+
+      // Approve the transfer
+      await soundProofNFT
+        .connect(this.bob)
+        .setApprovalForAll(this.owner.address, true);
+
+      // Transfer Bob to Alice by Owner
+      const transferFromTx = await soundProofNFT
+        .connect(this.owner)
+        .safeTransferFrom(this.bob.address, this.alice.address, 1);
+      // console.log(
+      //   "Safe Transfer From Transaction: ",
+      //   await web3.eth.getTransactionReceipt(transferFromTx.hash)
+      // );
+
+      // Check TotalSupply
+      assert.equal(await soundProofNFT.totalSupply(), 2);
+      // Check NFT Owner
+      assert.equal(await soundProofNFT.ownerOf(0), this.alice.address);
+      assert.equal(await soundProofNFT.ownerOf(1), this.alice.address);
+      // Check Balance of Previous Owner
+      assert.equal(await soundProofNFT.balanceOf(this.bob.address), 0);
+      // Check Balance Of New Owner
+      assert.equal(await soundProofNFT.balanceOf(this.alice.address), 2);
+      // Check Token of Owner By Index
+      const tokenIdList = await soundProofNFT.tokenOfOwnerByIndex(
+        this.alice.address
+      );
+      for (let i = 0; i < tokenIdList.length; i += 1) {
+        assert.equal(tokenIdList[i], `${i}`);
+      }
     });
   });
 });

@@ -4,6 +4,8 @@ pragma solidity ^0.8.4;
 import "./ISoundProofBase.sol";
 
 contract SoundProofNFTEvents {
+    /// @notice Change Ownership Event
+    event SoundProofNFTTransferOwnership(address indexed originalOwner, address indexed newOwner);
 }
 
 contract SoundProofNFTStorage is SoundProofBaseStorage {
