@@ -5,7 +5,13 @@ import "./ISoundProofBase.sol";
 
 contract SoundProofFactoryEvents {
     /// @notice Create NFT Event
-    event SoundProofNFTCreated(address indexed ownerAddress, address indexed nftAddress, uint);
+    event SoundProofNFTCreated(address indexed ownerAddress, address indexed nftAddress, uint indexed totalLength, bool isDuplicate);
+
+    /// @notice Approve NFT Event
+    event SoundProofNFTApproved(address indexed nftAddress, bool indexed isApprove);
+
+    /// @notice Change Public/Private NFT Status Event
+    event SoundProofNFTStatus(address indexed nftAddress, bool indexed isPublic);
 }
 
 contract SoundProofFactoryStorage is SoundProofBaseStorage {
@@ -72,14 +78,15 @@ abstract contract ISoundProofFactory is SoundProofFactoryEvents, SoundProofFacto
         string memory _rightType
     ) external virtual;
 
-    // Approve Change Functions
+    // Admin - Approve Change Functions
     function changeSoundProofNFTApprove(address nftAddress, bool isApprove) external virtual;
     function changeBulkSoundProofNFTApprove(address[] memory nftAddressList, bool isApprove) external virtual;
 
-    // Public/Private Change Functions
+    // Admin - Public/Private Change Functions
     function changeSoundProofNFTStatus(address nftAddress, bool isPublic) external virtual;
     function changeBulkSoundProofNFTStatus(address[] memory nftAddressList, bool isPublic) external virtual;
 
+    // Admin - Update WhiteList Functions
     function updateWhiteList(address userAddress, bool isWhiteList) external virtual;
     function updateBulkWhiteList(address[] memory addressList, bool isWhiteList) external virtual;
 }

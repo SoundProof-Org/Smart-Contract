@@ -1,5 +1,6 @@
 const { assert, expect } = require("chai");
 const { ethers, contract, artifacts } = require("hardhat");
+// const { web3 } = require("hardhat");
 const { ownerList } = require("./constants.js");
 const { generateRandomHash } = require("./utils.js");
 
@@ -110,12 +111,72 @@ contract("SoundProof Factory Contract", () => {
       );
     });
 
-    it("Check Proxy Address", async () => {
+    it("Check Initial Values", async () => {
+      // Check Proxy Implementation
       assert.equal(
         await this.SoundProofFactoryProxy.getImplementation(),
         this.SoundProofFactory.address
       );
+
+      // Check Total Length
+      assert.equal(await this.updatedProxy.allStorageListLength(), 2);
+
+      // Check Count of User NFTs
+      assert.equal(
+        await this.updatedProxy.allUserNFTCount(this.alice.address),
+        1
+      );
+      assert.equal(
+        await this.updatedProxy.allUserNFTCount(this.bob.address),
+        1
+      );
+
+      // Check NFT Info
+      const nftInfo = await this.updatedProxy.getNFTInfo(aliceNFTAddress);
+      assert.equal(nftInfo.nftOwner, this.alice.address);
+      assert.equal(nftInfo.isApprove, false);
+      assert.equal(nftInfo.isPublic, false);
     });
+
+    it("Check New Creation of SoundProof NFT - Duplicate UniqueID", async () => {
+      await expect(
+        this.updatedProxy
+          .connect(this.alice)
+          .createSoundProofNFT(nftUniqueID, ownerList[0], {
+            from: this.alice.address,
+            gasLimit: 20000000,
+          })
+      ).to.be.revertedWith("SoundProofFactory: No Unique ID");
+    });
+
+    it("Check New Creation of SoundProof NFT - Sum of Owned Percentage isn't 100%", async () => {
+      await expect(
+        this.updatedProxy
+          .connect(this.alice)
+          .createSoundProofNFT(generateRandomHash(), ownerList[2], {
+            from: this.alice.address,
+            gasLimit: 20000000,
+          })
+      ).to.be.revertedWith(
+        "SoundProofFactory: Sum of Owned Percentage should be equal 100.00%"
+      );
+    });
+
+    // it("Check New Creation of SoundProof NFT - Gas Amount & Event", async () => {
+    //   const transaction = await this.updatedProxy
+    //     .connect(this.alice)
+    //     .createSoundProofNFT(generateRandomHash(), ownerList[0], {
+    //       from: this.alice.address,
+    //       gasLimit: 20000000,
+    //     });
+
+    //   console.log("Transaction: ", transaction);
+    //   const transactionReceipt = await web3.eth.getTransactionReceipt(
+    //     transaction.hash
+    //   );
+    //   console.log("Transaction Receipt: ", transactionReceipt);
+    //   console.log("Transaction Logs: ", transactionReceipt.logs[0].topics);
+    // });
 
     it("Check New Creation of SoundProof NFT", async () => {
       // Check on SoundProofFactory

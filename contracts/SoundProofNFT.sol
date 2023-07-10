@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.4;
 import "./BaseContracts/ERC721Permit.sol";
-// import "./BaseContracts/ERC721MinimalUpdate.sol";
 import "./Interface/ISoundProofNFT.sol";
 import "./Interface/ISoundProofFactory.sol";
 import "./BaseContracts/Strings.sol";
@@ -91,8 +90,13 @@ contract SoundProofNFT is ISoundProofNFT, ERC721Permit {
      * @dev Change Ownership
      */
     function changeOwnership(address newOwner) external override onlySoundProofFactory {
+        address originalOwner = nftOwner;
+
         // Change Ownership
         nftOwner = newOwner;
+
+        // Emit The Event
+        emit SoundProofNFTTransferOwnership(originalOwner, newOwner);
     }
 
     /** ========================== SoundProofNFT Founctions ========================== */

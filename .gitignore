@@ -1,4 +1,6 @@
 node_modules
+abigen
+
 .env
 coverage
 coverage.json

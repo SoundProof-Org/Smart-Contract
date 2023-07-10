@@ -23,7 +23,7 @@ contract SoundProofFactory is Ownable, ISoundProofFactory, ReentrancyGuard {
      * @dev Get Count of User NFT
      */
     function allUserNFTCount(address userAddress) public view override returns (uint256 nftCount) {
-        for(uint256 i = 0; i < allNFTStorageList.length; i += 1) {
+        for (uint i = 0; i < allNFTStorageList.length; i += 1) {
             if (soundProofNFTInfo[allNFTStorageList[i]].nftOwner == userAddress) {
                 nftCount += 1;
             }
@@ -34,10 +34,10 @@ contract SoundProofFactory is Ownable, ISoundProofFactory, ReentrancyGuard {
      * @dev Get All NFTs of User
      */
     function allNFTList(address userAddress) public view override returns (address[] memory nftList) {
-        uint256 id = 0;
+        uint id = 0;
         nftList = new address[](allUserNFTCount(userAddress));
 
-        for (uint256 i = 0; i < allNFTStorageList.length; i += 1) {
+        for (uint i = 0; i < allNFTStorageList.length; i += 1) {
             if (soundProofNFTInfo[allNFTStorageList[i]].nftOwner == userAddress) {
                 nftList[id] = allNFTStorageList[i];
                 id += 1;
@@ -89,8 +89,8 @@ contract SoundProofFactory is Ownable, ISoundProofFactory, ReentrancyGuard {
         // Update Unique ID
         soundProofUniqueIDList[_uniqueId] = true;
 
-        // Emit the event
-        emit SoundProofNFTCreated(ownerAddress, newNFTAddress, allNFTStorageList.length);
+        // Emit The Event
+        emit SoundProofNFTCreated(ownerAddress, newNFTAddress, allNFTStorageList.length, _isDuplicate);
     }
 
     /**
@@ -102,6 +102,9 @@ contract SoundProofFactory is Ownable, ISoundProofFactory, ReentrancyGuard {
     ) internal {
         // Change Approve on SoundProof Factory
         soundProofNFTInfo[nftAddress].isApprove = isApprove;
+
+        // Emit The Event
+        emit SoundProofNFTApproved(nftAddress, isApprove);
     }
 
     /**
@@ -113,9 +116,12 @@ contract SoundProofFactory is Ownable, ISoundProofFactory, ReentrancyGuard {
     ) internal {
         // Change Public Status on SoundProof Factory
         soundProofNFTInfo[nftAddress].isPublic = isPublic;
+
+        // Emit The Event
+        emit SoundProofNFTStatus(nftAddress, isPublic);
     }
 
-    /** ========================== SoundProofFactory User Founctions ========================== */
+    /** ========================== SoundProofFactory Public Founctions ========================== */
     /**
      * @dev Create New SoundProof NFT By User
      */
@@ -142,7 +148,7 @@ contract SoundProofFactory is Ownable, ISoundProofFactory, ReentrancyGuard {
         // Get OwnerList of Original NFT
         SoundProofNFTOwnership[] memory ownerList = ISoundProofNFT(existedSoundProofNFT).getOwnerList();
 
-        // Create New NFT as duplicate
+        // Create New NFT as Duplicate
         _createSoundProofNFT(duplicateAddress, _uniqueId, "This NFT is duplicated by SoundProofIP Community.", ownerList, true);
     }
 
@@ -228,7 +234,7 @@ contract SoundProofFactory is Ownable, ISoundProofFactory, ReentrancyGuard {
         address[] memory nftAddressList,
         bool isApprove
     ) external override onlyOwner {
-        for (uint256 i = 0; i < nftAddressList.length; i += 1) {
+        for (uint i = 0; i < nftAddressList.length; i += 1) {
             // If NFT Exists
             if (soundProofNFTInfo[nftAddressList[i]].nftOwner != address(0)) {
                 // Call Change Approve Internal Function
@@ -257,7 +263,7 @@ contract SoundProofFactory is Ownable, ISoundProofFactory, ReentrancyGuard {
         address[] memory nftAddressList,
         bool isPublic
     ) external override onlyOwner {
-        for (uint256 i = 0; i < nftAddressList.length; i += 1) {
+        for (uint i = 0; i < nftAddressList.length; i += 1) {
             // If NFT Exists
             if (soundProofNFTInfo[nftAddressList[i]].nftOwner != address(0)) {
                 // Call Change Public/Private Internal Function
